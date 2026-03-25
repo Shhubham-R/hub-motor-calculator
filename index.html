@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DC Hub Motor Performance Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --accent2: #3fb950;
+      --warn: #d29922;
+      --danger: #f85149;
+      --text: #c9d1d9;
+      --text-muted: #8b949e;
+      --text-dim: #484f58;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .logo { font-size: 1.5rem; }
+    header h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    header p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.1rem;
+    }
+    .badge {
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 99px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* ── LAYOUT ── */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    .app-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .app-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 0.9rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .card-body { padding: 1.25rem; }
+
+    /* ── SECTIONS ── */
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin: 1.25rem 0 0.6rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-label:first-child { margin-top: 0; }
+
+    /* ── FORM ROWS ── */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+    .form-row.full { grid-template-columns: 1fr; }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .field label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .field .hint {
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      margin-top: 0.1rem;
+      line-height: 1.3;
+    }
+    .field input, .field select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      padding: 0.45rem 0.7rem;
+      width: 100%;
+      transition: border-color 0.15s;
+    }
+    .field input:focus, .field select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .field input::placeholder { color: var(--text-dim); }
+    .field select option { background: var(--surface2); }
+
+    /* ── CORE MATERIAL BADGES ── */
+    .material-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.35rem;
+    }
+    .mat-badge {
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text-muted);
+      transition: all 0.15s;
+    }
+    .mat-badge:hover { border-color: var(--accent); color: var(--accent); }
+    .mat-badge.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    /* ── BUTTONS ── */
+    .btn-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+    .btn {
+      flex: 1;
+      padding: 0.65rem 1rem;
+      border-radius: 7px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .btn-primary:hover { background: #79b8ff; border-color: #79b8ff; }
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--text-muted); }
+
+    /* ── RESULTS ── */
+    #results-panel { display: none; }
+    #results-panel.visible { display: block; }
+
+    .result-stalled {
+      background: rgba(248, 81, 73, 0.1);
+      border: 1px solid var(--danger);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      color: var(--danger);
+      font-size: 0.85rem;
+    }
+    .result-stalled strong { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; }
+    .result-stalled ul { margin: 0.4rem 0 0 1.2rem; }
+    .result-stalled li { margin: 0.25rem 0; }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+    .result-metric {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 0.75rem 1rem;
+    }
+    .result-metric .label {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      font-weight: 600;
+    }
+    .result-metric .value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-top: 0.2rem;
+    }
+    .result-metric .unit {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+    .result-metric.highlight {
+      border-color: var(--accent);
+      background: rgba(88, 166, 255, 0.05);
+    }
+    .result-metric.highlight .value { color: var(--accent); }
+    .result-metric.good .value { color: var(--accent2); }
+    .result-metric.warn .value { color: var(--warn); }
+    .result-metric.danger .value { color: var(--danger); }
+
+    /* ── EFFICIENCY BAR ── */
+    .eta-bar-wrap {
+      grid-column: 1 / -1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 0.75rem 1rem;
+    }
+    .eta-bar-wrap .label {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+    .eta-bar {
+      height: 10px;
+      background: var(--surface2);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .eta-fill {
+      height: 100%;
+      border-radius: 5px;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+      transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .eta-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent2);
+      margin-top: 0.4rem;
+    }
+
+    /* ── POWER BREAKDOWN ── */
+    .power-breakdown {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+    }
+    @media (max-width: 500px) { .power-breakdown { grid-template-columns: 1fr 1fr; } }
+    .power-chip {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.5rem 0.75rem;
+      text-align: center;
+    }
+    .power-chip .label { font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+    .power-chip .value { font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; font-weight: 600; margin-top: 0.15rem; }
+
+    /* ── AMPACITY WARNING ── */
+    .amp-warn {
+      grid-column: 1 / -1;
+      background: rgba(210, 153, 34, 0.1);
+      border: 1px solid var(--warn);
+      border-radius: 7px;
+      padding: 0.65rem 1rem;
+      font-size: 0.8rem;
+      color: var(--warn);
+      display: none;
+    }
+    .amp-warn.visible { display: block; }
+
+    /* ── DISCLAIMER ── */
+    .disclaimer {
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      background: var(--surface2);
+      border-radius: 7px;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+      grid-column: 1 / -1;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      border-top: 1px solid var(--border);
+      margin-top: 2rem;
+    }
+    footer a { color: var(--text-muted); text-decoration: none; }
+    footer a:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="logo">⚙</span>
+  <div>
+    <h1>DC / BLDC Hub Motor Performance Calculator</h1>
+    <p>Physics-based estimation tool — ported from Motor_calculator.py by Shhubham-R</p>
+  </div>
+  <span class="badge">Web</span>
+</header>
+
+<div class="container">
+  <div class="app-grid">
+
+    <!-- ══ LEFT: INPUTS ══ -->
+    <div class="card">
+      <div class="card-header">⚡ Motor Parameters</div>
+      <div class="card-body">
+
+        <div class="section-label">Winding</div>
+        <div class="form-row">
+          <div class="field">
+            <label>Stator Slots</label>
+            <input type="number" id="slots" value="12" min="1" />
+          </div>
+          <div class="field">
+            <label>Wire Gauge (AWG)</label>
+            <input type="number" id="awg" value="22" min="0" max="40" step="2" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Turns per Coil</label>
+            <input type="number" id="turns" value="40" min="1" />
+          </div>
+          <div class="field">
+            <label>Parallel Winding Paths</label>
+            <input type="number" id="paths" value="2" min="1" />
+          </div>
+        </div>
+
+        <div class="section-label">Magnets &amp; Geometry</div>
+        <div class="form-row">
+          <div class="field">
+            <label>Air-gap Flux Density B (T)</label>
+            <input type="number" id="B" value="0.8" min="0" step="0.05" />
+          </div>
+          <div class="field">
+            <label>Number of Magnets</label>
+            <input type="number" id="magnets" value="14" min="2" step="2" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Rotor Radius (cm)</label>
+            <input type="number" id="r_cm" value="5.0" min="0" step="0.1" />
+          </div>
+          <div class="field">
+            <label>Stator Stack Length (cm)</label>
+            <input type="number" id="L_cm" value="3.5" min="0" step="0.1" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Core Material</label>
+          <div class="material-badges" id="material-badges">
+            <button class="mat-badge" data-val="air">air</button>
+            <button class="mat-badge" data-val="iron">iron</button>
+            <button class="mat-badge active" data-val="silicon">silicon</button>
+            <button class="mat-badge" data-val="ferrite">ferrite</button>
+            <button class="mat-badge" data-val="amorphous">amorphous</button>
+          </div>
+          <input type="hidden" id="material" value="silicon" />
+        </div>
+
+        <div class="section-label">Operating Conditions</div>
+        <div class="form-row">
+          <div class="field">
+            <label>Supply Voltage (V)</label>
+            <input type="number" id="V" value="36" min="0" step="0.5" />
+          </div>
+          <div class="field">
+            <label>Ambient Temperature (°C)</label>
+            <input type="number" id="temp_c" value="25" step="1" />
+          </div>
+        </div>
+
+        <div class="section-label">Load Characteristics</div>
+        <div class="form-row">
+          <div class="field">
+            <label>Load Mass (kg)</label>
+            <input type="number" id="mass" value="2.0" min="0" step="0.1" />
+          </div>
+          <div class="field">
+            <label>Friction Coefficient μ</label>
+            <input type="number" id="mu" value="0.005" min="0" step="0.001" />
+          </div>
+        </div>
+        <div class="form-row full">
+          <div class="field">
+            <label>Angular Acceleration (rad/s²) — 0 for steady-state</label>
+            <input type="number" id="alpha" value="0" min="0" step="0.5" />
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" id="calc-btn">Calculate</button>
+          <button class="btn btn-secondary" id="reset-btn">Reset Defaults</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ RIGHT: RESULTS ══ -->
+    <div id="results-panel">
+      <div id="stalled-msg" class="result-stalled" style="display:none">
+        <strong>⚠ MOTOR STALLED — load torque exceeds stall torque</strong>
+        <ul>
+          <li>Increase supply voltage</li>
+          <li>Use more turns or stronger magnets (higher Kt)</li>
+          <li>Reduce load mass or friction coefficient</li>
+        </ul>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-header">📊 Speed</div>
+        <div class="card-body">
+          <div class="result-grid">
+            <div class="result-metric highlight">
+              <div class="label">Operating Speed</div>
+              <div class="value" id="r-rpm">—</div>
+              <div class="unit">RPM</div>
+            </div>
+            <div class="result-metric">
+              <div class="label">No-load Speed (theoretical)</div>
+              <div class="value" id="r-rpm0">—</div>
+              <div class="unit">RPM</div>
+            </div>
+            <div class="result-metric">
+              <div class="label">Speed Regulation</div>
+              <div class="value" id="r-reg">—</div>
+              <div class="unit">%</div>
+            </div>
+            <div class="result-metric">
+              <div class="label">Angular Speed</div>
+              <div class="value" id="r-omega">—</div>
+              <div class="unit">rad/s</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-header">🔧 Torque</div>
+        <div class="card-body">
+          <div class="result-grid">
+            <div class="result-metric">
+              <div class="label">Total Load Torque</div>
+              <div class="value" id="r-T">—</div>
+              <div class="unit">N·m</div>
+            </div>
+            <div class="result-metric">
+              <div class="label">Stall Torque</div>
+              <div class="value" id="r-Tstall">—</div>
+              <div class="unit">N·m</div>
+            </div>
+            <div class="result-metric">
+              <div class="label">Friction Torque</div>
+              <div class="value" id="r-Tf">—</div>
+              <div class="unit">N·m</div>
+            </div>
+            <div class="result-metric">
+              <div class="label">Inertia Torque</div>
+              <div class="value" id="r-Ti">—</div>
+              <div class="unit">N·m</div>
+            </div>
+            <div class="result-metric">
+              <div class="label">Load / Stall Ratio</div>
+              <div class="value" id="r-Tratio">—</div>
+              <div class="unit">% (&lt;80% = safe)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-header">⚡ Electrical</div>
+        <div class="card-body">
+          <div class="result-grid">
+            <div class="result-metric">
+              <div class="label">Back EMF</div>
+              <div class="value" id="r-BEMF">—</div>
+              <div class="unit">V</div>
+            </div>
+            <div class="result-metric">
+              <div class="label">I·R Voltage Drop</div>
+              <div class="value" id="r-Vr">—</div>
+              <div class="unit">V</div>
+            </div>
+            <div class="result-metric">
+              <div class="label">Operating Current</div>
+              <div class="value" id="r-I">—</div>
+              <div class="unit">A</div>
+            </div>
+            <div class="result-metric">
+              <div class="label">Stall Current</div>
+              <div class="value" id="r-Istall">—</div>
+              <div class="unit">A</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-header">⚡ Efficiency</div>
+        <div class="card-body">
+          <div class="eta-bar-wrap">
+            <div class="label">Overall Efficiency</div>
+            <div class="eta-bar"><div class="eta-fill" id="eta-fill" style="width:0%"></div></div>
+            <div class="eta-value" id="r-eta">— %</div>
+          </div>
+          <div class="result-grid" style="margin-top:0.75rem">
+            <div class="result-metric">
+              <div class="label">Total Input Power</div>
+              <div class="value" id="r-Pin">—</div>
+              <div class="unit">W</div>
+            </div>
+            <div class="result-metric">
+              <div class="label">Shaft Output Power</div>
+              <div class="value" id="r-Pshaft">—</div>
+              <div class="unit">W</div>
+            </div>
+          </div>
+          <div class="power-breakdown">
+            <div class="power-chip">
+              <div class="label">Copper Loss</div>
+              <div class="value" id="r-Pcu">—</div>
+            </div>
+            <div class="power-chip">
+              <div class="label">Core Loss</div>
+              <div class="value" id="r-Pcore">—</div>
+            </div>
+            <div class="power-chip">
+              <div class="label">Friction Output</div>
+              <div class="value" id="r-Pfric">—</div>
+            </div>
+            <div class="power-chip">
+              <div class="label">Winding R</div>
+              <div class="value" id="r-R">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-header">🌡️ Thermal — 5 min run, no cooling</div>
+        <div class="card-body">
+          <div class="result-grid">
+            <div class="result-metric">
+              <div class="label">Heat Generated</div>
+              <div class="value" id="r-Q">—</div>
+              <div class="unit">kJ</div>
+            </div>
+            <div class="result-metric">
+              <div class="label">Temperature Rise</div>
+              <div class="value" id="r-dT">—</div>
+              <div class="unit">°C</div>
+            </div>
+            <div class="result-metric">
+              <div class="label">Est. Winding Temp</div>
+              <div class="value" id="r-Twind">—</div>
+              <div class="unit">°C</div>
+            </div>
+            <div class="result-metric" id="thermal-status-cell">
+              <div class="label">Thermal Status</div>
+              <div class="value" id="r-thermal-status">—</div>
+              <div class="unit">Class B = 130°C max</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="amp-warn" id="amp-warn">
+        ⚠ AMPACITY WARNING: operating current exceeds AWG chassis rating — consider thicker wire.
+      </div>
+
+      <div class="disclaimer">
+        ⚠ These are estimates from simplified electromagnetic models. Real motors vary due to winding asymmetry, magnetic saturation, harmonics, and manufacturing tolerances. Use for design exploration and feasibility — not final specification.
+      </div>
+    </div><!-- /results-panel -->
+
+  </div><!-- /app-grid -->
+</div><!-- /container -->
+
+<footer>
+  Based on <a href="https://github.com/Shhubham-R/-DC-hub-motor-Performance-Calculator" target="_blank">Motor_calculator.py</a> by Shhubham-R ·
+  Ported to web by kumbi
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// PHYSICS ENGINE  (port of Motor_calculator.py)
+// ═══════════════════════════════════════════════════════════
+
+const COPPER_TEMP_COEF = 0.00393;
+const GRAVITY = 9.81;
+
+const AWG_OHMS_PER_M = {
+  0: 3.224e-4,  2: 5.127e-4,  4: 8.152e-4,  6: 1.296e-3,
+  8: 2.061e-3, 10: 3.277e-3, 12: 5.211e-3, 14: 8.286e-3,
+ 16: 1.318e-2, 18: 2.095e-2, 20: 3.329e-2, 22: 5.296e-2,
+ 24: 8.422e-2, 26: 1.339e-1, 28: 2.128e-1, 30: 3.385e-1,
+ 32: 5.385e-1, 34: 8.568e-1, 36: 1.361,     38: 2.164,
+ 40: 3.441,
+};
+
+const AWG_AMPACITY = {
+  0: 150,  2: 95,   4: 70,  6: 55,  8: 40, 10: 30,
+ 12: 20, 14: 15, 16: 13,  18: 10, 20: 5,  22: 3,
+ 24: 2,  26: 1,   28: 0.5, 30: 0.3, 32: 0.2, 34: 0.16,
+ 36: 0.1, 38: 0.07, 40: 0.05,
+};
+
+const CORE_LOSS_FACTOR = {
+  "air": 0.00, "iron": 2.80, "silicon": 1.00,
+  "ferrite": 0.35, "amorphous": 0.25,
+};
+
+function closestAWG(n) {
+  if (AWG_OHMS_PER_M[n] !== undefined) return n;
+  let best = 0;
+  for (let k of Object.keys(AWG_OHMS_PER_M)) {
+    if (Math.abs(k - n) < Math.abs(best - n)) best = +k;
+  }
+  return best;
+}
+
+function calcResistance(awg, numSlots, turns, statorL, rotorR, tempC) {
+  const awgKey = closestAWG(awg);
+  const rho20 = AWG_OHMS_PER_M[awgKey];
+  const rhoT = rho20 * (1 + COPPER_TEMP_COEF * (tempC - 20));
+  const slotPitch = (2 * Math.PI * rotorR) / numSlots;
+  const mtl = 2 * statorL + Math.PI * slotPitch;
+  const R = numSlots * turns * mtl * rhoT;
+  return [R, awgKey];
+}
+
+function calcMotorConstants(numSlots, turns, B, statorL, rotorR, parallelPaths) {
+  const Nseries = (numSlots * turns) / parallelPaths;
+  const ke = Nseries * B * statorL * rotorR;
+  return [ke, ke]; // Kt = Ke in SI
+}
+
+function calcOperatingPoint(Vsupply, Tload, ke, kt, R) {
+  if (ke <= 0 || kt <= 0) return [0, 0, 0, 0, true];
+  const iStall = Vsupply / R;
+  const tStall = kt * iStall;
+  const omega0 = Vsupply / ke;
+  if (Tload >= tStall) return [0, iStall, tStall, omega0, true];
+  const I = Tload / kt;
+  const omega = Math.max(0, (Vsupply - I * R) / ke);
+  return [omega, I, tStall, omega0, false];
+}
+
+function calcCoreLoss(material, B, omega, numMagnets, rotorR, statorL) {
+  const lf = CORE_LOSS_FACTOR[material] ?? 1.0;
+  if (lf === 0 || omega <= 0) return 0;
+  const fHz = (numMagnets / 2) * omega / (2 * Math.PI);
+  const vol = Math.PI * rotorR ** 2 * statorL * 0.40;
+  const mass = vol * 7650;
+  const pSp = lf * Math.pow(B, 1.8) * Math.pow(fHz / 50, 1.15);
+  return Math.max(0, pSp * mass);
+}
+
+function calcLoadTorque(mass, mu, radius, alpha) {
+  const Tf = mu * mass * GRAVITY * radius;
+  const J = 0.5 * mass * radius ** 2;
+  const Ti = J * alpha;
+  return [Tf + Ti, Tf, Ti];
+}
+
+function calcThermal(pCu, pCore, durS, rotorR, statorL) {
+  const volM3 = Math.PI * rotorR ** 2 * statorL * 0.45;
+  const mass = Math.max(0.05, volM3 * 7200);
+  const Cp = 450;
+  const Qj = (pCu + pCore) * durS;
+  const deltaT = Qj / (mass * Cp);
+  return [deltaT, Qj];
+}
+
+function runCalculation(p) {
+  const r = p.r_cm / 100;
+  const L = p.L_cm / 100;
+
+  const [R, awgKey] = calcResistance(p.awg, p.slots, p.turns, L, r, p.temp_c);
+  const [ke, kt] = calcMotorConstants(p.slots, p.turns, p.B, L, r, p.paths);
+  const [Tload, Tf, Ti] = calcLoadTorque(p.mass, p.mu, r, p.alpha);
+  const [omega, I, tStall, omega0, stalled] = calcOperatingPoint(p.V, Tload, ke, kt, R);
+
+  const rpm = omega * 60 / (2 * Math.PI);
+  const rpm0 = omega0 * 60 / (2 * Math.PI);
+  const backEmf = ke * omega;
+  const Vr = I * R;
+  const iStall = p.V / (R || 1e-12);
+
+  const pShaft = Tload * omega;
+  const pCu = I * I * R;
+  const pCore = calcCoreLoss(p.material, p.B, omega, p.magnets, r, L);
+  const pIn = pShaft + pCu + pCore;
+  const eta = pIn > 0 ? (pShaft / pIn) * 100 : 0;
+  const pFricOut = Tf * omega;
+
+  const [dT, Qj] = calcThermal(pCu, pCore, 300, r, L);
+  const ampMax = AWG_AMPACITY[awgKey];
+  const ampWarn = ampMax !== undefined && I > ampMax;
+
+  return {
+    stalled, rpm, omega, rpm0, omega0,
+    I, iStall, Tload, tStall, Tf, Ti,
+    backEmf, Vr,
+    pIn, pCu, pCore, pShaft, pFricOut,
+    eta, R, ke, kt, awgKey,
+    dT, QkJ: Qj / 1000,
+    ampWarn, ampMax,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+// UI LOGIC
+// ═══════════════════════════════════════════════════════════
+
+const DEFAULTS = {
+  slots: 12, awg: 22, turns: 40, paths: 2,
+  B: 0.8, magnets: 14, r_cm: 5.0, L_cm: 3.5,
+  material: 'silicon', V: 36, temp_c: 25,
+  mass: 2.0, mu: 0.005, alpha: 0,
+};
+
+function getInputs() {
+  return {
+    slots:  +document.getElementById('slots').value,
+    awg:    +document.getElementById('awg').value,
+    turns:  +document.getElementById('turns').value,
+    paths:  +document.getElementById('paths').value,
+    B:      +document.getElementById('B').value,
+    magnets:+document.getElementById('magnets').value,
+    r_cm:   +document.getElementById('r_cm').value,
+    L_cm:   +document.getElementById('L_cm').value,
+    material: document.getElementById('material').value,
+    V:      +document.getElementById('V').value,
+    temp_c: +document.getElementById('temp_c').value,
+    mass:   +document.getElementById('mass').value,
+    mu:     +document.getElementById('mu').value,
+    alpha:  +document.getElementById('alpha').value,
+  };
+}
+
+function resetDefaults() {
+  for (const [k, v] of Object.entries(DEFAULTS)) {
+    const el = document.getElementById(k);
+    if (el) el.value = v;
+  }
+  document.getElementById('material').value = 'silicon';
+  document.querySelectorAll('.mat-badge').forEach(b => {
+    b.classList.toggle('active', b.dataset.val === 'silicon');
+  });
+}
+
+function set(id, val, unit = '') {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (typeof val === 'number') {
+    el.textContent = val.toFixed(val < 1 ? 5 : val < 100 ? 3 : 2) + (unit ? ' ' + unit : '');
+  } else {
+    el.textContent = val + (unit ? ' ' + unit : '');
+  }
+}
+
+function displayResults(res, T_amb) {
+  document.getElementById('results-panel').classList.add('visible');
+
+  const stalledEl = document.getElementById('stalled-msg');
+  stalledEl.style.display = res.stalled ? 'block' : 'none';
+
+  if (res.stalled) {
+    set('r-T', res.Tload);
+    set('r-Tstall', res.tStall);
+    set('r-Istall', res.iStall);
+    document.getElementById('r-rpm').textContent = '0 (stalled)';
+    document.getElementById('r-omega').textContent = '0';
+    return;
+  }
+
+  set('r-rpm', res.rpm);
+  set('r-omega', res.omega);
+  set('r-rpm0', res.rpm0);
+  set('r-reg', (1 - res.omega / res.omega0) * 100);
+
+  set('r-T', res.Tload);
+  set('r-Tstall', res.tStall);
+  set('r-Tf', res.Tf);
+  set('r-Ti', res.Ti);
+  set('r-Tratio', (res.Tload / res.tStall) * 100);
+
+  set('r-BEMF', res.backEmf);
+  set('r-Vr', res.Vr);
+  set('r-I', res.I);
+  set('r-Istall', res.iStall);
+
+  set('r-Pin', res.pIn);
+  set('r-Pshaft', res.pShaft);
+  set('r-Pcu', res.pCu);
+  set('r-Pcore', res.pCore);
+  set('r-Pfric', res.pFricOut);
+  set('r-R', res.R);
+
+  set('r-eta', res.eta);
+
+  const etaFill = document.getElementById('eta-fill');
+  etaFill.style.width = Math.min(100, Math.max(0, res.eta)) + '%';
+
+  set('r-Q', res.QkJ);
+  set('r-dT', res.dT);
+  const Twind = T_amb + res.dT;
+  set('r-Twind', Twind);
+
+  const statusCell = document.getElementById('r-thermal-status');
+  const statusText = Twind > 130 ? '⚠ EXCEEDS LIMIT' : Twind > 100 ? '⚠ High' : '✓ OK';
+  statusCell.textContent = statusText;
+  document.getElementById('thermal-status-cell').className =
+    'result-metric ' + (Twind > 130 ? 'danger' : Twind > 100 ? 'warn' : 'good');
+
+  const ampWarnEl = document.getElementById('amp-warn');
+  ampWarnEl.classList.toggle('visible', res.ampWarn);
+
+  // Scroll to results on mobile
+  document.getElementById('results-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+document.getElementById('calc-btn').addEventListener('click', () => {
+  try {
+    const p = getInputs();
+    const res = runCalculation(p);
+    displayResults(res, p.temp_c);
+  } catch (e) {
+    alert('Calculation error: ' + e.message);
+  }
+});
+
+document.getElementById('reset-btn').addEventListener('click', resetDefaults);
+
+// Material badges
+document.querySelectorAll('.mat-badge').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mat-badge').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('material').value = btn.dataset.val;
+  });
+});
+
+// Enter key triggers calculation
+document.querySelectorAll('input').forEach(inp => {
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('calc-btn').click();
+  });
+});
+</script>
+</body>
+</html>
